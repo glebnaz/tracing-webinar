@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,14 +16,17 @@ import (
 
 func main() {
 	utils.InitJaeger("client")
+	i := 0
 	for {
+		i++
 		ctx, span := trace.StartSpan(context.Background(), "main")
 		span.AddAttributes(
 			trace.StringAttribute("method", "POST"),
 		)
 		log.Printf("TraceId: %s\n", span.SpanContext().TraceID.String())
 		resp, err := sendPostRequest(ctx,
-			"http://localhost:8080/get")
+			"http://localhost:8080/get",
+			int64(i))
 		if err != nil {
 			log.Printf("sendPostRequest: %v\n", err)
 		}
@@ -33,7 +37,7 @@ func main() {
 	}
 }
 
-func sendPostRequest(ctx context.Context, url string) (string, error) {
+func sendPostRequest(ctx context.Context, url string, number int64) (string, error) {
 	_ /* ctx2 */, span := trace.StartSpan(ctx, "sendPostRequest")
 	defer span.End()
 
@@ -42,11 +46,18 @@ func sendPostRequest(ctx context.Context, url string) (string, error) {
 		return "", err
 	}
 
-	req, err := http.NewRequest("POST", url, nil)
+	reqPayload := utils.Req{
+		number,
+	}
+
+	jsonStr, _ := json.Marshal(reqPayload)
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return "", err
 	}
 	req.Header.Add("X-Span-Context", string(spanContextJson))
+	req.Header.Set("Content-Type", "application/json")
 
 	client := http.Client{}
 	resp, err := client.Do(req)

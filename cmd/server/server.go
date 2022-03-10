@@ -32,6 +32,9 @@ func main() {
 		req := utils.Req{}
 		err = c.Bind(&req)
 
+		span.AddAttributes(
+			trace.StringAttribute("number", fmt.Sprintf("%d", req.Number)),
+		)
 		fmt.Println(req)
 		if err != nil {
 			return err
