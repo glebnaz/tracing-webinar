@@ -20,12 +20,14 @@ func main() {
 		ctx, span := trace.StartSpan(context.Background(), fmt.Sprintf("%d", i))
 		//span.AddAttributes()
 
-		answer, err := sendPostRequest(ctx, "localhost:8080", i)
+		answer, err := sendPostRequest(ctx, "http://localhost:8080/get", i)
 		if err != nil {
-			fmt.Printf("answer from server: %s", answer)
+			fmt.Printf("err: %s", err)
 			span.End()
+			time.Sleep(3 * time.Second)
 			continue
 		}
+		fmt.Printf("answer from server: %s", answer)
 
 		span.End()
 		time.Sleep(3 * time.Second)
